@@ -229,7 +229,7 @@ class Chartv2:
             other_sections = ['#BGCHANGES']
             for ignore_section in other_sections:
                 if line.startswith(ignore_section):
-                    print('ignoring', ignore_section)
+                   # print('ignoring', ignore_section)
                     section = True
                     ignorable_section = True
                     cursection = {}
@@ -238,7 +238,7 @@ class Chartv2:
 
             # See if we should start parsing a notedata section (metadata + notes)
             if line.strip() == '#NOTEDATA:;':
-                print("beginning #NOTEDATA @", lineno)
+               # print("beginning #NOTEDATA @", lineno)
                 if section:
                     raise Exception(
                         'Found unexpected NOTEDATA section on line {} inside existing section starting on line {}!'.format(lineno, sectionstart)
@@ -250,7 +250,7 @@ class Chartv2:
                 sectiondata = []
 
             elif line.strip().startswith('#BPMS'):
-                print("beginning #BPMS @", lineno)
+               # print("beginning #BPMS @", lineno)
                 if section and bpms_section:
                     raise Exception(
                         'Found unexpected BPMS section on line {} inside existing section starting on line {}!'.format(lineno, sectionstart)
@@ -262,7 +262,7 @@ class Chartv2:
                 sectiondata = []
 
             elif line.strip().startswith('#LABELS'):
-                print("beginning #LABELS @", lineno)
+               # print("beginning #LABELS @", lineno)
                 if section and labels_section:
                     raise Exception(
                         'Found unexpected LABELS section on line {} inside existing section starting on line {}!'.format(lineno, sectionstart)
@@ -301,7 +301,7 @@ class Chartv2:
                     # The top-level #CREDIT is used for 'illustrator'!
                     cursection['author'] = get_single_line_tag_val(line)
                 if line.strip().startswith('#NOTES'):
-                    print("beginning #NOTES @", lineno, cursection)
+                   # print("beginning #NOTES @", lineno, cursection)
                     notes_section = True
                 # # chart-specific #BPMS
                 # if line.strip().startswith('#BPMS'):
@@ -319,7 +319,7 @@ class Chartv2:
                         'Found spurious end section on line {}!'.format(lineno)
                     )
                 else:
-                    print("ending section @", lineno, cursection)
+                   # print("ending section @", lineno, cursection)
                     section = False
                     ignorable_section = False
                     if notes_section:
@@ -338,7 +338,7 @@ class Chartv2:
                     ignorable_section = False
                     if bpms_section or labels_section:
                         cursection = sectiondata
-                        print("ending section @", lineno, cursection)
+                      #  print("ending section @", lineno, cursection)
 
                         if bpms_section:
                             bpms_section = False

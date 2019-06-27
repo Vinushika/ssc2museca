@@ -101,7 +101,7 @@ class TwoDX:
 
 class ADPCM:
 
-    FADE_LENGTH = 0.5
+    FADE_LENGTH = 1
 
     def __init__(self, filename: str, preview_offset: float, preview_length: float) -> None:
         self.__filename = filename
@@ -128,7 +128,7 @@ class ADPCM:
                 '-hide_banner',
                 '-nostats',
                 '-loglevel',
-                'quiet',
+                'error',
                 '-i',
                 self.__filename,
                 '-acodec',
@@ -156,7 +156,7 @@ class ADPCM:
                 '-hide_banner',
                 '-nostats',
                 '-loglevel',
-                'quiet',
+                'error',
                 '-i',
                 self.__filename,
                 intemp.name,
@@ -169,19 +169,14 @@ class ADPCM:
                     '-V1',
                     intemp.name,
                     cuttemp.name,
-                    # SOX fade can act weird, so we add a buffer on both
-                    # sides and fade into that.
-                    'trim',
-                    str(self.__preview_offset - self.FADE_LENGTH),
-                    str(self.__preview_length + self.FADE_LENGTH),
-                    'fade',
-                    str(self.FADE_LENGTH * 2.0),
-                    str(self.__preview_length + self.FADE_LENGTH),
-                    str(self.FADE_LENGTH),
-                    # Now, we trim after the fade to get a better preview.
-                    'trim',
-                    str(self.FADE_LENGTH),
+					'trim',
+                    str(self.__preview_offset),
                     str(self.__preview_length),
+                    'fade', 
+					't',
+                    '0.0',
+                    str(self.__preview_length),
+                    str(self.FADE_LENGTH),
                 ])
 
                 # Now, do the final conversion to ADPCM and load the data.
@@ -192,7 +187,7 @@ class ADPCM:
                         '-hide_banner',
                         '-nostats',
                         '-loglevel',
-                        'quiet',
+                        'error',
                         '-i',
                         cuttemp.name,
                         '-acodec',

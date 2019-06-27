@@ -171,11 +171,11 @@ class ADPCM:
                     cuttemp.name,
                     'trim',
                     str(self.__preview_offset),
-                    str(self.__preview_length),
-                    'fade', 
+                    '10.0',
+                    'fade',
                     't',
                     '0.0',
-                    str(self.__preview_length),
+                    '10.0',
                     str(self.FADE_LENGTH),
                 ])
 

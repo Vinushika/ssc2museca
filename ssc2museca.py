@@ -54,19 +54,15 @@ def main() -> int:
     fp.close()
 
     chart = Chartv2(data)
-    if args.id is None and chart.metadata.get('subtitle') is None: # if A and B are both false, raise exception
+    if args.id is None and chart.metadata.get('subtitle') is None:
         raise Exception("No ID found in SSC file! Please specify an ID in the arguments or in the SSC file.")
-    elif args.id is None and chart.metadata.get('subtitle') is not None: # if A is false and B is true:
-        args.id = int(chart.metadata.get('subtitle')) #use this
-        print("cond 1")
-    elif args.id is not None and chart.metadata.get('subtitle') is not None: # if A and B are both true:
-        args.id = int(chart.metadata.get('subtitle')) #still use this
-        print("cond2")
+    elif args.id is None and chart.metadata.get('subtitle') is not None:
+        args.id = int(chart.metadata.get('subtitle'))
+    elif args.id is not None and chart.metadata.get('subtitle') is not None:
+        args.id = int(chart.metadata.get('subtitle'))
     else:
-        if args.id is not None and chart.metadata.get('subtitle') is None: # if A is true and B is false:
+        if args.id is not None and chart.metadata.get('subtitle') is None:
             args.id = args.id
-            print("cond3")
-
     xml = XMLv2(chart, args.id)
 
 

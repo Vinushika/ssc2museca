@@ -1,10 +1,19 @@
 # MÚSECA Chart Converter
 
-This utility includes a chart converter that can convert a set of charts written in StepMania's .ssc file format and an audio file to a format recognized by MÚSECA. Additionally, it will generate metadata to copy-paste into the music database xml, or optionally update an xml file if provided. It is invoked similar to the following:
+August 2019 Updates:
+- Implemented ID support - ID can be specified in the ``#SUBTITLE:123;`` field of the SSC file/SM editor. ID can still be specified as an argument, but it will always defer to the ID in the Subtitle field, if available.
+- Automatic folder creation - optimized for drag-n-drop into the data_mods folder of IFS LayeredFS.
+- Added jacket support - see jacket info section below.
+- Improved preview audio conversion
+- Modified general usage of ssc2museca.py - described below
 
-    python3 ssc2museca.py chart.ssc 123
+This utility includes a chart converter that can convert a set of charts written in StepMania's .ssc file format and an audio file to a format recognized by MÚSECA. Additionally, it will generate metadata to copy-paste into the music database xml, or optionally update an xml file if provided. Usage is described below:
 
-In the above command, a chart for Novice (Green), Advanced (Yellow), and Exhaust (Red) will be parsed out of ``chart.ssc`` and metadata and a directory suitable for copying into MÚSECA's game data will be generated. The game will identify the entry as ID 123. Note that you will probably want to choose IDs that are not already taken in the music database xml unless you want to replace songs in the game instead of add songs to the game. By default, the converter will output the converted metadata, chart and audio files to the current directory. To specify a separate directory, use ``--directory some/dir``. To tell the converter to update an existing xml file instead of generating a copy-pastable chunk of xml, use ``--update-xml music-info.xml``.
+    python ssc2museca.py [-h (shows help message)] [-id ID] [-d DIRECTORY] [-x NEW_XML] FILE
+
+In the above command, a chart for Novice (Green), Advanced (Yellow), and Exhaust (Red) will be parsed out of ``chart.ssc`` and metadata and a directory suitable for copying into the ``data_mods`` folder of IFS Layered FS will be created. By default, the converter will output the converted metadata, chart and audio files to a `custom_charts` folder in the current directory. To specify the output directory, use ``-d some/directory``. To tell the converter to create a new, isolated xml file containing just the metadata for one song, use ``-x somedir/music-info-b.xml``
+If you wish to update the full music database, create the folder ``custom_charts/museca/xml`` and copy-paste music-info-b.xml. The converter will append all new entries. Otherwise, the converter will create and update an xml in that directory.
+(The IFS xml merging function currently can't handle some japanese characters, so it is best to copy and update the existing music-info-b.xml from the game files. IFS LayeredFS will redirect the game to use the xml in ``data_mods/custom_charts/museca/xml``, so long as it is named the same.)
 
 ## About This Fork
 
@@ -23,10 +32,17 @@ The following external dependencies are required to run this conversion software
 - python3 - The script assumes python 3.5 or better to operate.
 - MÚSECA cabinet - Obviously you'll need to have access to one of these to test and play songs.
 
+## Jackets
+
+The converter now automates the process of copy-pasting jackets and placing them in the correct folders witht the correct names. The parser will look for ``jacket.png and jacketSmall.png`` at minimum. If they aren't found, an error will be logged to ``jacket_errors.txt``.
+Support for individual-difficulty jackets is also available. The converter will look for ``jacket2.png, jacket2small.png, jacket3.png, jacket3small.png``, but it will not show an error if they are not found.
+
+Jackets have the following image size requirements:
+
+    jacket.png - 768x768px
+    jacketSmall.png - 202x202px
+
 ## Caveats
-
-While it is possible to also update the album art (both the jacket and the background on the result screen and the music select screen), the converter does not currently automate the process. I recommend looking into mon's IFS tools to do this. The background on the results screen is just a .png file named correctly (based on the ID), and the jacket is in a .ifs file named either ``pix_jk_s.ifs`` or ``pix_jk_s_2.ifs`` depending on the song's ID. You will want to add jackets for new songs to ``pix_jk_s_2.ifs``.
-
 Note that the game supports time signatures other than 4/4 but the converter doesn't make any attempt to handle this. It also DOES technically support BPM changes, but no verification was done around this feature. The converter will probably let you put down illegal sequences, such as a small/large spinny boi on top of a regular note. The game engine may actually handle this, but there is no guarantee!
 
 # Chart Format
@@ -34,6 +50,7 @@ Note that the game supports time signatures other than 4/4 but the converter doe
 ## Header Tags
 
 * ``TITLE`` - The title of the song as it shows in-game. This can include all sorts of characters, including english, kana or kanji. Various accented latin characters may not render correctly due to particulars about how the game handles certain character sets, though.
+* ``SUBTITLE`` - The chart ID that will be read by the converter. Museca's final music database update ended at 226, so you should use 227 or higher.
 * ``TITLETRANSLIT`` - The title of the song as sounded out, written in half-width katakana (dakuten allowed). This is used for title sort. There are converters which take any english and give you the katakana, and converters that go from full-width to half-width katakana. Use them!
 * ``ARTIST`` - The artist of the song as it shows in-game. This can include all sorts of characters, including english, kana or kanji. Various accented latin characters may not render correctly due to particulars about how the game handles certain character sets, though.
 * ``ARTISTTRANSLIT`` - The artist of the song as sounded out, written in half-width katakana (dakuten allowed). This is used for artist sort. There are converters which take any english and give you the katakana, and converters that go from full-width to half-width katakana. Use them!
@@ -133,6 +150,7 @@ Below is an example chart, which includes a few measures showcasing a handful of
 
     #VERSION:0.83;
     #TITLE:Test Song;
+    #SUBTITLE: 123; (CHART ID GOES HERE)
     #ARTIST:Test;
     #TITLETRANSLIT:ﾃｽﾄｿﾝｸﾞｸ;
     #ARTISTTRANSLIT:ﾃｽﾄ;

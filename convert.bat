@@ -20,7 +20,7 @@ for /r %source% %%i in (*.ssc) do (
     
   REM Use this for normal conversion.
   ssc2museca.py "%%i" -id !ID!
-  set /a B+=1
+  set /a ID+=1
  )
 
 cd D:\Museca-Customs\

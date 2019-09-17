@@ -152,9 +152,7 @@ def main() -> int:
 
     jacket_b = "jacket.png"
     jacket_s = "jacketSmall.png"
-    jacketvar = os.path.split(args.file)[0]
-    if os.path.exists("jacket_errors.txt"):
-        os.remove("jacket_errors.txt")										   
+    jacketvar = os.path.split(args.file)[0]								   
     logfile = io.open(os.path.join(root, 'jacket_errors.txt'), 'a', encoding='shift_jisx0213')
     if jacket_b is not None:
         print('Copying BIG jacket...')

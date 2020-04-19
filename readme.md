@@ -18,7 +18,7 @@ If you wish to update the full music database, create the folder ``custom_charts
 ## Installation
 * First download python3 for windows. The installer will ask you if you want to add python to your path, say YES!
 * Then download this project as a zip file. Extract the ssc2museca folder to a safe location and add it to your path. Google that if you don't know what it means.
-* PLEASE read this readme very carefully, especially the bits about handling the XMLs and jackets.
+* PLEASE read this readme very carefully, especially the bits about handling the XMLs and jackets.``````
 * I also suggest adding Open Command Window Here to the folder right click context menu so you don't have to cd /d to your chart location every time. Tutorial on that here https://www.windowscentral.com/add-open-command-window-here-back-context-menu-windows-10
  
 

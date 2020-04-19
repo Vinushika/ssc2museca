@@ -22,7 +22,7 @@ if /I "%c%" EQU "N" goto :quit
 goto :choice
 
 :continue
-if exist custom_charts rmdir /Q /S museca-plus-modpack
+if exist custom_charts rmdir /Q /S custom_charts
 Xcopy /E /I /Q /Y .\src\defaults .
 
 for /r %source% %%I in (*.ssc) do (

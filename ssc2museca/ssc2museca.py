@@ -80,10 +80,10 @@ def main() -> int:
                 raise Exception('Music file present but no sample start specified for preview!')
             if not os.path.exists(os.path.split(args.file)[0] + '\\' + 'jacket.png'):
                 logger.critical(os.path.splitext(os.path.basename(args.file))[0] + " - Missing jacket.png")
-                err = 1
+                # err = 1
             if not os.path.exists(os.path.split(args.file)[0] + '\\' + 'jacketSmall.png'):
                 logger.critical(os.path.splitext(os.path.basename(args.file))[0] + " - Missing jacketSmall.png")
-                err = 1
+                # err = 1
 
         except Exception as msg:
             exception_handler(msg, args.file)

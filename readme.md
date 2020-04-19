@@ -1,4 +1,9 @@
 # MÚSECA Chart Converter
+  
+April 2020 Updates:  
+- Overhauled the converter, added better logging, ssc2museca executable, ssc verification.
+- Two batch files provided to build all charts or add one to the current build.
+- Omnimix songs included in ``defaults``
 
 August 2019 Updates:
 - Implemented ID support - ID can be specified in the ``#SUBTITLE:123;`` field of the SSC file/SM editor. ID can still be specified as an argument, but it will always defer to the ID in the Subtitle field, if available.
@@ -9,26 +14,21 @@ August 2019 Updates:
 
 This utility includes a chart converter that can convert a set of charts written in StepMania's .ssc file format and an audio file to a format recognized by MÚSECA. Additionally, it will generate metadata to copy-paste into the music database xml, or optionally update an xml file if provided. Usage is described below:
 
-    python ssc2museca.py [-h (shows help message)] [-id ID] [-d DIRECTORY] [-x NEW_XML] FILE
+    ssc2museca\ssc2museca.exe [-h (shows help message)] [-id ID] [-d DIRECTORY] [-x NEW_XML] [-v --verify] SSC_FILE
 
-In the above command, a chart for Novice (Green), Advanced (Yellow), and Exhaust (Red) will be parsed out of ``chart.ssc`` and metadata and a directory suitable for copying into the ``data_mods`` folder of IFS Layered FS will be created. By default, the converter will output the converted metadata, chart and audio files to a `custom_charts` folder in the current directory. To specify the output directory, use ``-d some/directory``. To tell the converter to create a new, isolated xml file containing just the metadata for one song, use ``-x somedir/music-info-b.xml``
-If you wish to update the full music database, create the folder ``custom_charts/museca/xml`` and copy-paste the original music-info-b.xml. The converter will append all new entries. Otherwise, the converter will create and update an xml in that directory.
-(The IFS xml merging function currently can't handle some japanese characters, so it is best to copy and update the original music-info-b.xml from the game files. IFS LayeredFS will redirect the game to use the xml in ``data_mods/custom_charts/museca/xml``, so long as it is named the same.)
+In the above command, a chart for Novice (Green), Advanced (Yellow), and Exhaust (Red) will be parsed out of ``chart.ssc`` and metadata and a directory suitable for copying into the ``data_mods`` folder of IFS Layered FS will be created. By default, the converter will output the converted metadata, chart and audio files to a `custom_charts` folder in the current directory. To specify the output directory, use ``-d some/directory``. To tell the converter to create a new, isolated xml file containing just the metadata for one song, use ``-x somedir/music-info-b.xml``  
+The IFS xml merging function currently can't handle some japanese characters, the original music-info-b.xml is provided as a base.
+IFS LayeredFS will redirect the game to use the xml in ``data_mods/custom_charts/museca/xml``, so long as it is named the same.
 
 ## Installation
-* First download python3 for windows. The installer will ask you if you want to add python to your path, say YES!
-* Then download this project as a zip file. Extract the ssc2museca folder to a safe location and add it to your path. Google that if you don't know what it means.
-* PLEASE read this readme very carefully, especially the bits about handling the XMLs and jackets.``````
-* I also suggest adding Open Command Window Here to the folder right click context menu so you don't have to cd /d to your chart location every time. Tutorial on that here https://www.windowscentral.com/add-open-command-window-here-back-context-menu-windows-10
+* Python no longer a dependency, only VisualC++2019 Redist, which may already be installed on your pc.
+* PLEASE read this readme very carefully, especially the bits about handling the XMLs and jackets.
  
-
 ## Recommended Usage:
 
-* Copy the chart folder you wish to convert from the stepmania-museca editor to a new location where all your conversions will be done. Something like Documents\Museca-Customs\to_convert\
-* Make sure your audio is OGG format. Don't use WAV and don't use MP3. You can convert with Audacity. You should have an ssc file, an ogg audio file, and (optionally) two jackets in the folder. (see below on jacket requirements)
-* Create the folder \custom_charts\museca\xml\ in your Museca-customs directory. Copy the original music-info-b.xml from the game files, and paste it here. 
-* Copy the convert.bat file to your Museca-Customs folder and open it in a notepad editor. Update the source to the full path of your to_convert folder. Optionally set the ID, but it's always best to not use this and set the ID in the Subtitle field in the Stempania editor.
-* Save and close convert.bat, and double click it to run it. Any chart folders in the to_convert folder should be converted and placed in the custom_charts folder. If you performed all these steps correctly, you should be able to copy the custom_charts folder into your game (it goes in contents\data_mods). If you don't have a data_mods folder, you will need IFS LayeredFS. See the Dependencies section below.
+* Copy the chart folder you wish to convert from the stepmania-museca editor to ``src\custom_charts``
+* You should have an ssc file, an audio file, and two jackets in the folder. (see below on jacket requirements)
+* Run one of the provided batch files to start the conversion process. Once complete, you may copy ``custom_charts`` to the ``contents\data_mods`` folder in your game.
 
 
 ## About This Fork
@@ -42,15 +42,12 @@ Windows binaries for this StepMania 5.2 fork are available as a .zip or .exe ins
 ## Dependencies
 
 The following external dependencies are required to run this conversion software:
-- IFS LayeredFS - Instructions inlcuded in the download. https://mon.im/bemanipatcher/secret/ifs_layeredfs_latest.zip
-- ffmpeg - (now included) Used to convert various audio formats to the ADPCM format required by MÚSECA.
-- sox - (now included) Used to create preview clips.
-- python3 - The script assumes python 3.5 or better to operate.
-- MÚSECA cabinet - Obviously you'll need to have access to one of these to test and play songs.
+- ~~IFS LayeredFS - Instructions inlcuded in the download. https://mon.im/bemanipatcher/secret/ifs_layeredfs_latest.zip~~
+- IFS LayeredFS is now built directly into spicetools, and loads the data_mods folder automatically.
 
 ## Jackets
 
-The converter now automates the process of copy-pasting jackets and placing them in the correct folders witht the correct names. The parser will look for ``jacket.png and jacketSmall.png`` at minimum. If they aren't found, an error will be logged to ``jacket_errors.txt``.
+The converter now automates the process of copy-pasting jackets and placing them in the correct folders witht the correct names. The parser will look for ``jacket.png and jacketSmall.png`` at minimum. If they aren't found, an error will be logged to ``error_log.txt``.
 Support for individual-difficulty jackets is also available. The converter will look for ``jacket2.png, jacket2small.png, jacket3.png, jacket3small.png``, but it will not show an error if they are not found.
 
 Jackets have the following image size requirements:

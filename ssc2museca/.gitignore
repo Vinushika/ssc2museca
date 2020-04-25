@@ -6,3 +6,4 @@ dist
 .hgignore
 *.swp
 .mypy_cache
+/build_exe.bat

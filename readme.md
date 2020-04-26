@@ -4,6 +4,7 @@ April 2020 Updates:
 - Overhauled the converter, added better logging, ssc2museca executable, ssc verification.
 - Two batch files provided to build all charts or add one to the current build.
 - Omnimix songs included in ``defaults``
+- If you want to use a separate preview audio file, name it in the Preview field of the sm editor. Otherwise, the main audio file will be used.
 
 August 2019 Updates:
 - Implemented ID support - ID can be specified in the ``#SUBTITLE:123;`` field of the SSC file/SM editor. ID can still be specified as an argument, but it will always defer to the ID in the Subtitle field, if available.

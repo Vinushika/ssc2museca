@@ -254,8 +254,10 @@ def main() -> int:
 
     musicvar = (os.path.split(args.file)[0])
     musicfile = (os.path.join(musicvar, chart.metadata.get('music')))
-    # print(musicvar)
-    # print(musicfile)
+    try:
+        previewfile = (os.path.join(musicvar, chart.metadata.get('preview')))
+    except TypeError:
+        previewfile = None
     if musicfile is not None:
         # Make sure we also provided a sample start/offset
         preview_start = chart.metadata.get('samplestart')
@@ -266,7 +268,7 @@ def main() -> int:
         sample_length = 10.0
 
         print('Converting audio...')
-        adpcm = ADPCM(musicfile, sample_start, sample_length)
+        adpcm = ADPCM(musicfile, previewfile, sample_start, sample_length)
         twodx = TwoDX()
         twodx.set_name('01_{num:04d}'.format(num=args.id))
         twodx.write_file('01_{num:04d}_1.wav'.format(num=args.id), adpcm.get_full_data())

@@ -112,12 +112,16 @@ class ADPCM:
 
     FADE_LENGTH = 1
 
-    def __init__(self, filename: str, preview_offset: float, preview_length: float) -> None:
+    def __init__(self, filename: str, preview: str, preview_offset: float, preview_length: float) -> None:
         self.__filename = filename
         self.__preview_offset = preview_offset
         self.__preview_length = preview_length
         self.__full_data = None
         self.__preview_data = None
+        if preview:
+            self.__preview = preview
+        else:
+            self.__preview = filename
 
     def __check_file(self) -> None:
         if not os.path.exists(self.__filename):
@@ -167,7 +171,7 @@ class ADPCM:
                 '-loglevel',
                 'error',
                 '-i',
-                self.__filename,
+                self.__preview,
                 intemp.name,
             ])
 

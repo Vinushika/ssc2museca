@@ -889,7 +889,7 @@ class XMLv2:
         element(info, 'distribution_date', datetime.date.strftime(datetime.datetime.now(), "%Y%m%d")).setAttribute('__type', 'u32')  # type: ignore
 
         # TODO: Figure out what more of these should be (is_fixed???)
-        element(info, 'volume', '90').setAttribute('__type', 'u16')
+        element(info, 'volume', infodict.get('musicvolume', '90')).setAttribute('__type', 'u16')
         element(info, 'bg_no', '0').setAttribute('__type', 'u16')
         element(info, 'genre', '16').setAttribute('__type', 'u8')
         element(info, 'is_fixed', '1').setAttribute('__type', 'u8')

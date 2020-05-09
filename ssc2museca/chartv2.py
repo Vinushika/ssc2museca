@@ -6,6 +6,7 @@ import sys
 from typing import Dict, Any, List, Tuple, Optional
 from xml.dom import minidom  # type: ignore
 
+
 class Constants:
     EVENT_KIND_NOTE = 0
     EVENT_KIND_HOLD = 1
@@ -29,11 +30,11 @@ class Constants:
     # CONSTANTS FOR 16-LANE FORMAT
     # (these may not all get used)
     SM_LANE_PEDAL = 0
-    SM_LANE_1  = 1
-    SM_LANE_2  = 2
-    SM_LANE_3  = 3
-    SM_LANE_4  = 4
-    SM_LANE_5  = 5
+    SM_LANE_1 = 1
+    SM_LANE_2 = 2
+    SM_LANE_3 = 3
+    SM_LANE_4 = 4
+    SM_LANE_5 = 5
     SM_LANE_1L = 6
     SM_LANE_2L = 7
     SM_LANE_3L = 8
@@ -100,7 +101,8 @@ class Constants:
     # - for cases where all 3 channels are currently in use
     # - that is to say: storm ending at the same time as a non-directional spin at the end (or start!) of a hold
     # - TODO: this should be parsed per-chart, which requires support
-    #STORM_LABELS = ['STORM_END_LANE_1', 'STORM_END_LANE_2', 'STORM_END_LANE_3', 'STORM_END_LANE_4', 'STORM_END_LANE_5']
+    # STORM_LABELS = ['STORM_END_LANE_1', 'STORM_END_LANE_2', 'STORM_END_LANE_3', 'STORM_END_LANE_4', 'STORM_END_LANE_5']
+
 
 # This works similarly to the original sm2museca chart class, except for the part
 # where it doesn't. This uses a custom game mode with a 16-lane game type,
@@ -116,12 +118,12 @@ class Chartv2:
         self.metadata = self.__get_metadata(data)
         self.notes = self.__get_notesections(data)
         self.events = {}  # type: Dict[str, List[Dict[str, int]]]
-        
+
         if not self.metadata.get('bpms', {}):
             self.metadata['bpms'] = self.notes.get('bpms', {})
         if not self.metadata.get('labels', {}):
             self.metadata['labels'] = self.notes.get('labels', {})
-        
+
         for difficulty in ['easy', 'medium', 'hard']:
             if difficulty not in self.notes:
                 continue
@@ -166,7 +168,7 @@ class Chartv2:
     def __get_metadata(self, data: bytes) -> Dict[str, str]:
         lines = data.decode('utf-8').replace('\r', '\n').split('\n')
         lines = [line[1:-1] for line in lines if line.startswith('#') and line.endswith(';') and \
-        # ignore tags that can potentially contain multiple values but only contain 1
+                 # ignore tags that can potentially contain multiple values but only contain 1
                  not (line.startswith('#BPMS') or line.startswith('#LABELS'))]
         lines = [line for line in lines if ':' in line]
 
@@ -174,7 +176,7 @@ class Chartv2:
         for line in lines:
             section, value = line.split(':', 1)
 
-            if not (infodict.get('credit') and section == 'CREDIT'): # ignore subsequent #CREDIT tags
+            if not (infodict.get('credit') and section == 'CREDIT'):  # ignore subsequent #CREDIT tags
                 infodict[section.lower()] = value
 
         return infodict
@@ -182,6 +184,7 @@ class Chartv2:
     def __get_notesections(self, data: bytes) -> Dict[str, Dict[str, Any]]:
         def get_single_line_tag_val(line: str) -> str:
             return line.strip().split(':')[1][:-1]
+
         def get_tag_val_pair(line: str) -> Dict[str, Dict[str, Any]]:
             return line.strip()[:-1].split('=', 1)
 
@@ -208,7 +211,7 @@ class Chartv2:
 
         # #BPMS
         bpms_section = False
-        
+
         # #LABELS
         labels_section = False
 
@@ -225,13 +228,13 @@ class Chartv2:
         sectiondata = []  # type: List[Tuple[int, str]]
 
         for line in lines:
-            all_sections = ['#BPMS', '#LABELS', '#BGCHANGES', '#NOTEDATA', '#NOTES']
+            all_sections = ['#BPMS', '#LABELS', '#NOTEDATA', '#NOTES']
 
             # ignore sections that start with these
-            other_sections = ['#BGCHANGES']
+            other_sections = []
             for ignore_section in other_sections:
                 if line.startswith(ignore_section):
-                   # print('ignoring', ignore_section)
+                    # print('ignoring', ignore_section)
                     section = True
                     ignorable_section = True
                     cursection = {}
@@ -240,10 +243,11 @@ class Chartv2:
 
             # See if we should start parsing a notedata section (metadata + notes)
             if line.strip() == '#NOTEDATA:;':
-               # print("beginning #NOTEDATA @", lineno)
+                # print("beginning #NOTEDATA @", lineno)
                 if section:
                     raise Exception(
-                        'Found unexpected NOTEDATA section on line {} inside existing section starting on line {}!'.format(lineno, sectionstart)
+                        'Found unexpected NOTEDATA section on line {} inside existing section starting on line {}!'.format(
+                            lineno, sectionstart)
                     )
                 section = True
                 notedata_section = True
@@ -252,10 +256,11 @@ class Chartv2:
                 sectiondata = []
 
             elif line.strip().startswith('#BPMS'):
-               # print("beginning #BPMS @", lineno)
+                # print("beginning #BPMS @", lineno)
                 if section and bpms_section:
                     raise Exception(
-                        'Found unexpected BPMS section on line {} inside existing section starting on line {}!'.format(lineno, sectionstart)
+                        'Found unexpected BPMS section on line {} inside existing section starting on line {}!'.format(
+                            lineno, sectionstart)
                     )
                 section = True
                 bpms_section = True
@@ -264,10 +269,11 @@ class Chartv2:
                 sectiondata = []
 
             elif line.strip().startswith('#LABELS'):
-               # print("beginning #LABELS @", lineno)
+                # print("beginning #LABELS @", lineno)
                 if section and labels_section:
                     raise Exception(
-                        'Found unexpected LABELS section on line {} inside existing section starting on line {}!'.format(lineno, sectionstart)
+                        'Found unexpected LABELS section on line {} inside existing section starting on line {}!'.format(
+                            lineno, sectionstart)
                     )
                 section = True
                 labels_section = True
@@ -280,8 +286,8 @@ class Chartv2:
                 # Either measure data or garbage we care nothing about
                 # Filter out some garbage at least
                 if notes_section and \
-                   not line.strip().startswith('//') and \
-                   not line.strip().startswith(';'):
+                        not line.strip().startswith('//') and \
+                        not line.strip().startswith(';'):
                     sectiondata.append((lineno, line))
                 # We're a little less picky about #BPMS and #LABELS
                 elif bpms_section or labels_section:
@@ -303,7 +309,7 @@ class Chartv2:
                     # The top-level #CREDIT is used for 'illustrator'!
                     cursection['author'] = get_single_line_tag_val(line)
                 if line.strip().startswith('#NOTES'):
-                   # print("beginning #NOTES @", lineno, cursection)
+                    # print("beginning #NOTES @", lineno, cursection)
                     notes_section = True
                 # # chart-specific #BPMS
                 # if line.strip().startswith('#BPMS'):
@@ -321,7 +327,7 @@ class Chartv2:
                         'Found spurious end section on line {}!'.format(lineno)
                     )
                 else:
-                   # print("ending section @", lineno, cursection)
+                    # print("ending section @", lineno, cursection)
                     section = False
                     ignorable_section = False
                     if notes_section:
@@ -340,7 +346,7 @@ class Chartv2:
                     ignorable_section = False
                     if bpms_section or labels_section:
                         cursection = sectiondata
-                      #  print("ending section @", lineno, cursection)
+                        #  print("ending section @", lineno, cursection)
 
                         if bpms_section:
                             bpms_section = False
@@ -403,7 +409,8 @@ class Chartv2:
             for i, (time, beat, label) in enumerate(relevant_labels):
                 if label != Constants.GRAFICA_LABELS[i]:
                     raise Exception(
-                        'Unexpected {} label found in #LABELS, was expecting {}.'.format(label, Constants.GRAFICA_LABELS[i])
+                        'Unexpected {} label found in #LABELS, was expecting {}.'.format(label,
+                                                                                         Constants.GRAFICA_LABELS[i])
                     )
                 else:
                     if i % 2 == 0:
@@ -426,7 +433,7 @@ class Chartv2:
             notes_per_measure = len(measure)
 
             # Measures are 4/4 time, so figure out what one measure costs time-wise
-            seconds_per_beat = 60.0/bpm
+            seconds_per_beat = 60.0 / bpm
             seconds_per_measure = seconds_per_beat * 4.0
 
             # Now, scale so we know how many seconds are taken up per tick in this
@@ -494,7 +501,8 @@ class Chartv2:
                             found = False
                             for i in range(len(pending_events)):
                                 if (
-                                    pending_events[i][1]['kind'] in Constants.EVENT_CATEGORY_LARGE_SPINNERS and pending_events[i][1]['lane'] == msc_lane
+                                        pending_events[i][1]['kind'] in Constants.EVENT_CATEGORY_LARGE_SPINNERS and
+                                        pending_events[i][1]['lane'] == msc_lane
                                 ):
                                     # Found start, transfer it
                                     pending_events[i][1]['end'] = int(curtime)
@@ -506,7 +514,9 @@ class Chartv2:
                                     break
 
                             if not found:
-                                raise Exception('End spin note with no start spin found for lane {} on line {}!'.format(msc_lane, lineno))
+                                raise Exception(
+                                    'End spin note with no start spin found for lane {} on line {}!'.format(msc_lane,
+                                                                                                            lineno))
 
                         # normal note/spin processing
                         tap = note_data[0]
@@ -538,8 +548,8 @@ class Chartv2:
                             found = False
                             for i in range(len(pending_events)):
                                 if (
-                                    pending_events[i][1]['kind'] == Constants.EVENT_KIND_HOLD and
-                                    pending_events[i][1]['lane'] == msc_lane
+                                        pending_events[i][1]['kind'] == Constants.EVENT_KIND_HOLD and
+                                        pending_events[i][1]['lane'] == msc_lane
                                 ):
                                     # Found start, transfer it
                                     pending_events[i][1]['end'] = int(curtime)
@@ -550,9 +560,12 @@ class Chartv2:
                                     break
 
                             if not found:
-                                raise Exception('End hold note with no start hold found for lane {} on line {}!'.format(msc_lane, lineno))
+                                raise Exception(
+                                    'End hold note with no start hold found for lane {} on line {}!'.format(msc_lane,
+                                                                                                            lineno))
                         elif tap not in Constants.SM_NOTES:
-                            raise Exception('Unknown normal note type {} for lane {} on line {}!'.format(tap, msc_lane, lineno))
+                            raise Exception(
+                                'Unknown normal note type {} for lane {} on line {}!'.format(tap, msc_lane, lineno))
 
                         # both spin lanes have a tap/hold-start, non-directional spin detected
                         if all([(x in [Constants.SM_NOTE_TAP, Constants.SM_NOTE_HOLD_START]) for x in spins]):
@@ -562,15 +575,15 @@ class Chartv2:
                                 event_type = Constants.EVENT_KIND_LARGE_SPINNER
                                 is_pending = True
                                 pending_events.append((
-                                lineno,
-                                event(
+                                    lineno,
+                                    event(
                                         event_type,
                                         msc_lane,
                                         curtime,
                                         curtime,
                                     )
                                 ))
-                            else: # both spin items are taps
+                            else:  # both spin items are taps
                                 event_type = Constants.EVENT_KIND_SMALL_SPINNER
                                 events.append(event(
                                     event_type,
@@ -580,7 +593,7 @@ class Chartv2:
                                 ))
                         else:
                             invalid_note_found = False
-                            if spins[0] != Constants.SM_NOTE_NONE: # spin left
+                            if spins[0] != Constants.SM_NOTE_NONE:  # spin left
                                 if spins[0] == Constants.SM_NOTE_TAP:
                                     event_type = Constants.EVENT_KIND_SMALL_SPINNER_LEFT
                                     events.append(event(
@@ -603,7 +616,7 @@ class Chartv2:
                                     ))
                                 elif spins[0] not in Constants.SM_NOTES:
                                     invalid_note_found = True
-                            if spins[1] != Constants.SM_NOTE_NONE: # spin right
+                            if spins[1] != Constants.SM_NOTE_NONE:  # spin right
                                 if spins[1] == Constants.SM_NOTE_TAP:
                                     event_type = Constants.EVENT_KIND_SMALL_SPINNER_RIGHT
                                     events.append(event(
@@ -628,12 +641,13 @@ class Chartv2:
                                     invalid_note_found = True
 
                             if invalid_note_found:
-                                raise Exception('Unknown spin note type {} for lane {} on line {}!'.format(spins, msc_lane, lineno))
+                                raise Exception(
+                                    'Unknown spin note type {} for lane {} on line {}!'.format(spins, msc_lane, lineno))
 
                     # pedal lane is the last index in this list,
                     # only accepts hold events
                     elif msc_lane == 5:
-                        if note_data[0] == Constants.SM_NOTE_HOLD_START:   # pedal start
+                        if note_data[0] == Constants.SM_NOTE_HOLD_START:  # pedal start
                             event_type = Constants.EVENT_KIND_HOLD
                             is_pending = True
                             pending_events.append((
@@ -645,13 +659,13 @@ class Chartv2:
                                     curtime,
                                 )
                             ))
-                        elif note_data[0] == Constants.SM_NOTE_HOLD_END: # pedal end
+                        elif note_data[0] == Constants.SM_NOTE_HOLD_END:  # pedal end
                             resolving_pending = True
                             found = False
                             for i in range(len(pending_events)):
                                 if (
-                                    pending_events[i][1]['kind'] == Constants.EVENT_KIND_HOLD and
-                                    pending_events[i][1]['lane'] == msc_lane
+                                        pending_events[i][1]['kind'] == Constants.EVENT_KIND_HOLD and
+                                        pending_events[i][1]['lane'] == msc_lane
                                 ):
                                     # Found start, transfer it
                                     pending_events[i][1]['end'] = int(curtime)
@@ -662,12 +676,16 @@ class Chartv2:
                                     break
 
                             if not found:
-                                raise Exception('End hold note with no start hold found for lane {} on line {}!'.format(msc_lane, lineno))
+                                raise Exception(
+                                    'End hold note with no start hold found for lane {} on line {}!'.format(msc_lane,
+                                                                                                            lineno))
                         elif note_data[0] in [Constants.SM_NOTE_TAP, Constants.SM_NOTE_MINE]:
-                            raise Exception('Invalid note type {} for foot pedal on line {}!'.format(note_data[0], lineno))
+                            raise Exception(
+                                'Invalid note type {} for foot pedal on line {}!'.format(note_data[0], lineno))
 
                     else:
-                        raise Exception('Note data {} for unknown lane {} on line {}!'.format(note_data, msc_lane, lineno))
+                        raise Exception(
+                            'Note data {} for unknown lane {} on line {}!'.format(note_data, msc_lane, lineno))
 
                     # if is_pending:
 
@@ -704,7 +722,8 @@ class Chartv2:
 
         for (lineno, evt) in pending_events:
             if evt['kind'] not in Constants.EVENT_CATEGORY_LARGE_SPINNERS:
-                raise Exception('Note started on line {} for lane {} is missing end marker!'.format(lineno, evt['lane'] + 1))
+                raise Exception(
+                    'Note started on line {} for lane {} is missing end marker!'.format(lineno, evt['lane'] + 1))
 
         # Events can be generated out of order, so lets sort them!
         events = sorted(
@@ -745,6 +764,7 @@ class Chartv2:
             key=lambda b: b[0]
         )
 
+
 class XMLv2:
 
     def __init__(self, chart: Chartv2, chartid: int) -> None:
@@ -764,13 +784,12 @@ class XMLv2:
             key=lambda b: b[0]
         )
 
-
         # Write out the chart
         chart = minidom.Document()
         root = chart.createElement('data')
         chart.appendChild(root)
 
-        def element(parent: Any, name: str, value: Optional[str]=None) -> Any:
+        def element(parent: Any, name: str, value: Optional[str] = None) -> Any:
             element = chart.createElement(name)
             parent.appendChild(element)
 
@@ -838,8 +857,8 @@ class XMLv2:
         return chart.toprettyxml(indent="  ").encode('ascii')
 
     def __add_metadata_to_document(
-        self,
-        music_data: minidom.Document,
+            self,
+            music_data: minidom.Document,
     ) -> None:
         # Find MDB node
         mdb_nodes = music_data.getElementsByTagName('mdb')
@@ -860,7 +879,7 @@ class XMLv2:
         maxbpm = max([bpm for (_, bpm) in bpms])
         minbpm = min([bpm for (_, bpm) in bpms])
 
-        def element(parent: Any, name: str, value: Optional[str]=None) -> Any:
+        def element(parent: Any, name: str, value: Optional[str] = None) -> Any:
             element = music_data.createElement(name)
             parent.appendChild(element)
 
@@ -886,7 +905,8 @@ class XMLv2:
         element(info, 'ascii', infodict.get('subtitletranslit', 'dummy'))
         element(info, 'bpm_min', str(int(minbpm * 100))).setAttribute('__type', 'u32')
         element(info, 'bpm_max', str(int(maxbpm * 100))).setAttribute('__type', 'u32')
-        element(info, 'distribution_date', datetime.date.strftime(datetime.datetime.now(), "%Y%m%d")).setAttribute('__type', 'u32')  # type: ignore
+        element(info, 'distribution_date', datetime.date.strftime(datetime.datetime.now(), "%Y%m%d")).setAttribute(
+            '__type', 'u32')  # type: ignore
 
         # TODO: Figure out what more of these should be (is_fixed???)
         element(info, 'volume', infodict.get('musicvolume', '90')).setAttribute('__type', 'u16')
@@ -903,7 +923,8 @@ class XMLv2:
 
         # Create difficulties section
         difficulty = element(music, 'difficulty')
-        for (sm_diff, msc_diff) in [('easy', 'novice'), ('medium', 'advanced'), ('hard', 'exhaust'), ('expert', 'infinite')]:
+        for (sm_diff, msc_diff) in [('easy', 'novice'), ('medium', 'advanced'), ('hard', 'exhaust'),
+                                    ('expert', 'infinite')]:
             root = element(difficulty, msc_diff)
             if msc_diff != 'infinite':
                 details = notedetails.get(sm_diff, {})
@@ -914,7 +935,9 @@ class XMLv2:
             element(root, 'illustrator', infodict.get('credit', 'dummy'))
             element(root, 'effected_by', details.get('author', 'dummy'))
             element(root, 'price', '-2').setAttribute('__type', 's32')
-            element(root, 'limited', '3' if (sm_diff == 'expert' or  details.get('rating', '0') == '0') else '3').setAttribute('__type', 'u8')
+            element(root, 'limited',
+                    '3' if (sm_diff == 'expert' or details.get('rating', '0') == '0') else '3').setAttribute('__type',
+                                                                                                             'u8')
 
     def get_metadata(self) -> bytes:
         # Create root document

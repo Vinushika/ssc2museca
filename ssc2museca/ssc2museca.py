@@ -1,18 +1,22 @@
 import logging
 import argparse
-import datetime
+from PIL import Image
 import os
 import sys
-import subprocess
 import shutil
-import io
+import glob
+import coloredlogs
 
 logging.basicConfig(filename='error_log.txt', filemode='a', level=logging.DEBUG, format="[%(asctime)s] %(message)s", datefmt='%H:%M:%S')
 console = logging.StreamHandler()
 console.setLevel(logging.WARNING)
 logging.getLogger('').addHandler(console)
+logging.getLogger('PIL').setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
-
+LEVEL_STYLES = coloredlogs.DEFAULT_LEVEL_STYLES
+LEVEL_STYLES['critical'] = {'color': 196}
+LEVEL_STYLES['error'] = {'color': 196}
+coloredlogs.install(level='DEBUG', logger=logger, fmt="[%(asctime)s] %(message)s", datefmt='%H:%M:%S', level_styles=LEVEL_STYLES)
 from typing import Dict, Any, List, Tuple, Optional
 from xml.dom import minidom  # type: ignore
 
@@ -21,14 +25,16 @@ from audio import TwoDX, ADPCM
 from exception_handler import exception_handler
 
 
-def main() -> int:
+def parse_args():
     parser = argparse.ArgumentParser(
         description="A utility to convert 16-lane StepMania charts (.ssc format) to Museca format.")
     parser.add_argument(
-        "file",
+        "-f",
+        "--file",
         metavar="FILE",
         help=".ssc file to convert to Museca format.",
         type=str,
+        default=None
     )
     parser.add_argument(
         "-id",
@@ -56,8 +62,20 @@ def main() -> int:
         help="Checks the ssc files for errors without converting or writing files.",
         action='store_true'
     )
+    parser.add_argument(
+        "--build-all",
+        help="Checks the ssc files for errors without converting or writing files.",
+        action='store_true'
+    )
+    if len(sys.argv) < 2:
+        parser.print_usage()
+        sys.exit(1)
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main(args):
+    folder_name = os.path.dirname(args.file) + os.sep
     root = args.directory
     if root[-1] != '/':
         root = root + '/'
@@ -73,24 +91,41 @@ def main() -> int:
         try:
             print("Verifying - " + args.file)
             chart = Chartv2(data)
-            if args.id is None and chart.metadata.get('subtitle') is None:
-                raise Exception("No ID found in SSC file! Please specify an id in the #SUBTITLE:x; field.")
-            xml = XMLv2(chart, args.id)
-            if chart.metadata.get('samplestart') is None:
-                raise Exception('Music file present but no sample start specified for preview!')
-            if not os.path.exists(os.path.split(args.file)[0] + '\\' + 'jacket.png'):
-                logger.critical(os.path.splitext(os.path.basename(args.file))[0] + " - Missing jacket.png")
+            subtitle = chart.metadata.get('subtitle')
+            if args.id is None:
+                try:
+                    int(subtitle)
+                except:
+                    raise Exception("No ID found in SSC file, or ID is incorrect. Please specify an id in the #SUBTITLE:x; field.")
+            XMLv2(chart, args.id)
+
+            if not os.path.exists(folder_name + chart.metadata.get('music')):
+                logger.critical(folder_name + f' - Cannot find music file: {chart.metadata.get("music")}')
+                err = 1
+            if chart.metadata.get('samplestart') is None or chart.metadata.get('samplestart') == '':
+                logger.critical(folder_name + ' - Music file present but no sample start specified for preview!')
+                err = 1
+            if not os.path.exists(folder_name + 'jacket.png'):
+                logger.critical(folder_name + " - Missing jacket.png")
                 # err = 1
-            if not os.path.exists(os.path.split(args.file)[0] + '\\' + 'jacketSmall.png'):
-                logger.critical(os.path.splitext(os.path.basename(args.file))[0] + " - Missing jacketSmall.png")
+            else:
+                with Image.open(folder_name + 'jacket.png') as img:
+                    if img.size != (768, 768):
+                        logger.critical(folder_name + ' - jacket.png is not 768x768')
+                        err = 1
+            if not os.path.exists(folder_name + 'jacketSmall.png'):
+                logger.critical(folder_name + " - Missing jacketSmall.png")
                 # err = 1
+            else:
+                with Image.open(folder_name + 'jacketSmall.png') as img:
+                    if img.size != (202, 202):
+                        logger.critical(folder_name + ' - jacketSmall.png is not 202x202')
+                        err = 1
 
         except Exception as msg:
             exception_handler(msg, args.file)
-        if err:
-            sys.exit(1)
-        else:
-            sys.exit(0)
+            err = 1
+        return err
 
 
     try:
@@ -98,15 +133,18 @@ def main() -> int:
     except Exception as msg:
         exception_handler(msg, args.file)
 
-    if args.id is None and chart.metadata.get('subtitle') is None:
-        exception_handler("No ID found in SSC file! Please specify an id in the #SUBTITLE:x; field.", args.file)
-    elif args.id is None and chart.metadata.get('subtitle') is not None:
-        args.id = int(chart.metadata.get('subtitle'))
-    elif args.id is not None and chart.metadata.get('subtitle') is not None:
-        args.id = int(chart.metadata.get('subtitle'))
+    subtitle = chart.metadata.get('subtitle')
+    if args.id is None:
+        try:
+            int(subtitle)
+        except Exception:
+            exception_handler("No ID found in SSC file, or ID is incorrect. Please specify an id in the #SUBTITLE:x; field.", args.file)
+    if args.id and subtitle:
+        args.id = int(subtitle)
+    elif not args.id and subtitle:
+        args.id = int(subtitle)
     else:
-        if args.id is not None and chart.metadata.get('subtitle') is None:
-            args.id = args.id
+        args.id = int(args.id)
     try:
         xml = XMLv2(chart, args.id)
     except Exception as msg:
@@ -193,11 +231,10 @@ def main() -> int:
 
     jacket_b = "jacket.png"
     jacket_s = "jacketSmall.png"
-    jacketvar = os.path.split(args.file)[0]
     if jacket_b is not None:
         print('Copying BIG jacket...')
         try:
-            shutil.copyfile(jacketvar + '\\' + jacket_b,
+            shutil.copyfile(folder_name + jacket_b,
                             jacket_b_dir + '\\' + 'jk_01_{num:04d}_1_b.png'.format(num=args.id))
         except IOError as e:
             logger.critical(f'{os.path.splitext(os.path.basename(args.file))[0]} - {e.strerror}: {jacket_b}')
@@ -205,45 +242,45 @@ def main() -> int:
     if jacket_s is not None:
         print('Copying SMALL jacket...')
         try:
-            shutil.copyfile(jacketvar + '\\' + jacket_s,
+            shutil.copyfile(folder_name + jacket_s,
                             jacket_s_dir + '\\' + 'jk_01_{num:04d}_1_s.png'.format(num=args.id))
         except IOError as e:
             logger.critical(f'{os.path.splitext(os.path.basename(args.file))[0]} - {e.strerror}: {jacket_s}')
 
-    if os.path.exists(jacketvar + '\\' + 'jacket2.png'):
+    if os.path.exists(folder_name + 'jacket2.png'):
         print("jacket2 found")
         try:
-            shutil.copyfile(jacketvar + '\\' + 'jacket2.png',
+            shutil.copyfile(folder_name + 'jacket2.png',
                             jacket_b_dir + '\\' + 'jk_01_{num:04d}_2_b.png'.format(num=args.id))
         except IOError as e:
             print('%s' % e.strerror + ': ' + 'jacket2.png')
         else:
             print("Copy OK")
 
-    if os.path.exists(jacketvar + '\\' + 'jacket2small.png'):
+    if os.path.exists(folder_name + 'jacket2small.png'):
         print("jacket2small found")
         try:
-            shutil.copyfile(jacketvar + '\\' + 'jacket2small.png',
+            shutil.copyfile(folder_name + 'jacket2small.png',
                             jacket_s_dir + '\\' + 'jk_01_{num:04d}_2_s.png'.format(num=args.id))
         except IOError as e:
             print('%s' % e.strerror + ': ' + 'jacket2small.png')
         else:
             print("Copy OK")
 
-    if os.path.exists(jacketvar + '\\' + 'jacket3.png'):
+    if os.path.exists(folder_name + 'jacket3.png'):
         print("jacket3 found")
         try:
-            shutil.copyfile(jacketvar + '\\' + 'jacket3.png',
+            shutil.copyfile(folder_name + 'jacket3.png',
                             jacket_b_dir + '\\' + 'jk_01_{num:04d}_3_b.png'.format(num=args.id))
         except IOError as e:
             print('%s' % e.strerror + ': ' + 'jacket3.png')
         else:
             print("Copy OK")
 
-    if os.path.exists(jacketvar + '\\' + 'jacket3Small.png'):
+    if os.path.exists(folder_name + 'jacket3Small.png'):
         print("jacket3small found")
         try:
-            shutil.copyfile(jacketvar + '\\' + 'jacket3small.png',
+            shutil.copyfile(folder_name + 'jacket3small.png',
                             jacket_s_dir + '\\' + 'jk_01_{num:04d}_3_s.png'.format(num=args.id))
         except IOError as e:
             print('%s' % e.strerror + ': ' + 'jacket3small.png')
@@ -293,4 +330,16 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    args = parse_args()
+    files = [f for f in glob.glob("src\\custom_charts/*/*.ssc", recursive=True)]
+    err = []
+    if args.file:
+        err.append(main(args))
+    else:
+        for f in files:
+            args.file = f
+            err.append(main(args))
+    if 1 in err:
+        sys.exit(1)
+    else:
+        sys.exit(0)

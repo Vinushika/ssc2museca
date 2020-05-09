@@ -10,7 +10,7 @@ goto :quit
 if exist error_log.txt del error_log.txt
 
 ::Verify assets
-ssc2museca\ssc2museca.exe "%source%" --verify
+ssc2museca\ssc2museca.exe -f "%source%" --verify
 echo.
 if %errorlevel% EQU 0 (echo   Verification success) else (echo   Verification failed.) && goto :quit
 
@@ -22,7 +22,7 @@ goto :choice
 
 :continue
 if not exist custom_charts Xcopy /E /I /Q /Y .\src\defaults .
-ssc2museca\ssc2museca.exe "%source%"
+ssc2museca\ssc2museca.exe -f "%source%"
 
 :quit
 cmd /k

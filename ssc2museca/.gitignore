@@ -1,9 +1,8 @@
 __pycache__
 build
 dist
-*.spec
 .hg
 .hgignore
 *.swp
 .mypy_cache
-/build_exe.bat
+./idea

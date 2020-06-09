@@ -1,5 +1,15 @@
 # MÚSECA Chart Converter
-  
+
+June 2020 Updates:
+- Local caching
+    - When you run the converter for the first time, it will build a src\cache.json file to keep track of any changes that occurr in src\custom_charts.
+    - If a song folder is removed from src\custom_charts, the converter will remove the respective assets from your converted custom_charts folder.
+    - A change to any file in a folder in src\custom_charts will cause that song and all of it's assets to be re-converted.
+- Introduced a progress bar
+- Moved most of the batch file contents over to ssc2museca.py
+- More verification checks (jacket sizes, music files, etc)
+
+
 April 2020 Updates:  
 - Overhauled the converter, added better logging, ssc2museca executable, ssc verification.
 - Two batch files provided to build all charts or add one to the current build.

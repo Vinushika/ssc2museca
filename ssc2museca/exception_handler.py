@@ -8,4 +8,4 @@ def exception_handler(exception, file=None):
         logger.error(f'{os.path.splitext(os.path.basename(file))[0]} - {exception}')
     else:
         logger.error(exception)
-    sys.exit(1)
+    return 1

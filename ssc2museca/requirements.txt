@@ -1,0 +1,3 @@
+enlighten==1.5.2
+coloredlogs==14.0
+Pillow==7.1.2

@@ -289,7 +289,10 @@ class Chartv2:
                     if lineno == sectionstart:
                         sectiondata.append((lineno, get_single_line_tag_val(line)))
                     else:
-                        sectiondata.append((lineno, line.strip()[:-1]))
+                        if line.strip()[-1] in [',', ';']:
+                            sectiondata.append((lineno, line.strip()[:-1]))
+                        else:
+                            sectiondata.append((lineno, line.strip()))
 
                 # abort parsing this section if it's not for museca
                 if line.strip().startswith('#STEPSTYPE'):
@@ -330,6 +333,21 @@ class Chartv2:
                         cursection['data'] = sectiondata
                         if cursection.get('difficulty'):
                             sections[cursection['difficulty'].lower()] = cursection
+                    elif (bpms_section or labels_section) and line.strip().endswith(';'):
+                        if not section and (bpms_section or labels_section):
+                            section = False
+                            ignorable_section = False
+                            if bpms_section or labels_section:
+                                cursection = sectiondata
+                                #  print("ending section @", lineno, cursection)
+
+                                if bpms_section:
+                                    bpms_section = False
+                                    sections['bpms'] = cursection
+                                elif labels_section:
+                                    labels_section = False
+                                    sections['labels'] = cursection
+
             elif (bpms_section or labels_section) and line.strip().endswith(';'):
                 if not section and (bpms_section or labels_section):
                     raise Exception(

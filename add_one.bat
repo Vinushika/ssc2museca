@@ -2,7 +2,7 @@
 setlocal ENABLEDELAYEDEXPANSION
 
 if "%~1" NEQ "" (
-  for /F "delims=" %%B in ('dir /S /B "%~1\!file!"') do set source=%%B
+  for /F "delims=" %%B in ('dir /S /B "%~1\*.ssc"') do set source=%%B
   goto :next
 ) else (
   goto :input

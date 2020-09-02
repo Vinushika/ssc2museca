@@ -1,14 +1,11 @@
 import logging
 import argparse
 from PIL import Image
-import os
-import sys
-import shutil
-import glob
+import os, sys, shutil, glob, json, time, re
 import coloredlogs
 import enlighten
-import json
-import time
+import hash
+
 manager = enlighten.get_manager()
 manager.term.move_to(0, manager.term.height)
 
@@ -73,8 +70,8 @@ def parse_args():
         action='store_true'
     )
     parser.add_argument(
-        "-q",
-        "--quiet",
+        "-y",
+        "--yes",
         help="Supress prompts.",
         action='store_true'
     )
@@ -116,23 +113,55 @@ def main():
             if chart.metadata.get('samplestart') is None or chart.metadata.get('samplestart') == '':
                 logger.critical(folder_name + ' - Music file present but no sample start specified for preview!')
                 err = 1
-            if not os.path.exists(folder_name + 'jacket.png'):
-                logger.critical(folder_name + " - Missing jacket.png")
-                err = 1
-            else:
-                with Image.open(folder_name + 'jacket.png') as img:
+
+# Check jacket.png
+            j = [f for f in os.listdir(folder_name) if re.search('jacket.png', f, re.IGNORECASE)]
+            if j:
+                with Image.open(folder_name + j[0]) as img:
                     if img.size != (768, 768):
                         logger.critical(folder_name + ' - jacket.png is not 768x768')
                         err = 1
-            if not os.path.exists(folder_name + 'jacketSmall.png'):
-                logger.critical(folder_name + " - Missing jacketSmall.png")
-                err = 1
             else:
-                with Image.open(folder_name + 'jacketSmall.png') as img:
+                logger.critical(folder_name + " - Missing jacket.png")
+                err = 1
+# Check jacketSmall.png
+            j = [f for f in os.listdir(folder_name) if re.search('jacketSmall.png', f, re.IGNORECASE)]
+            if j:
+                with Image.open(folder_name + j[0]) as img:
                     if img.size != (202, 202):
                         logger.critical(folder_name + ' - jacketSmall.png is not 202x202')
                         err = 1
-
+            else:
+                logger.critical(folder_name + " - Missing jacketSmall.png")
+                err = 1
+# Check jacket2.png
+            j = [f for f in os.listdir(folder_name) if re.search('jacket2.png', f, re.IGNORECASE)]
+            if j:
+                with Image.open(folder_name + j[0]) as img:
+                    if img.size != (768, 768):
+                        logger.critical(folder_name + ' - jacket2.png is not 768x768')
+                        err = 1
+# Check jacket2small.png
+            j = [f for f in os.listdir(folder_name) if re.search('jacket2small.png', f, re.IGNORECASE)]
+            if j:
+                with Image.open(folder_name + j[0]) as img:
+                    if img.size != (202, 202):
+                        logger.critical(folder_name + ' - jacket2small.png is not 202x202')
+                        err = 1
+# Check jacket3.png
+            j = [f for f in os.listdir(folder_name) if re.search('jacket3.png', f, re.IGNORECASE)]
+            if j:
+                with Image.open(folder_name + j[0]) as img:
+                    if img.size != (768, 768):
+                        logger.critical(folder_name + ' - jacket3.png is not 768x768')
+                        err = 1
+# Check jacket3small.png
+            j = [f for f in os.listdir(folder_name) if re.search('jacket3small.png', f, re.IGNORECASE)]
+            if j:
+                with Image.open(folder_name + j[0]) as img:
+                    if img.size != (202, 202):
+                        logger.critical(folder_name + ' - jacket3small.png is not 202x202')
+                        err = 1
         except Exception as msg:
             exception_handler(msg, args.file)
             err = 1
@@ -238,61 +267,64 @@ def main():
 
     jacket_b = "jacket.png"
     jacket_s = "jacketSmall.png"
-    if jacket_b is not None:
-        print('Copying BIG jacket...')
-        try:
-            shutil.copyfile(folder_name + jacket_b,
-                            jacket_b_dir + '\\' + 'jk_01_{num:04d}_1_b.png'.format(num=args.id))
-        except IOError as e:
-            logger.critical(f'{os.path.splitext(os.path.basename(args.file))[0]} - {e.strerror}: {jacket_b}')
 
-    if jacket_s is not None:
-        print('Copying SMALL jacket...')
-        try:
-            shutil.copyfile(folder_name + jacket_s,
-                            jacket_s_dir + '\\' + 'jk_01_{num:04d}_1_s.png'.format(num=args.id))
-        except IOError as e:
-            logger.critical(f'{os.path.splitext(os.path.basename(args.file))[0]} - {e.strerror}: {jacket_s}')
+    try:
+        j = [f for f in os.listdir(folder_name) if re.search('jacket.png', f, re.IGNORECASE)]
+        if j:
+            jacket_b = j[0]
+            print('Copying BIG jacket...')
+            shutil.copyfile(folder_name + jacket_b, jacket_b_dir + '/' + 'jk_01_{num:04d}_1_b.png'.format(num=args.id))
+    except IOError as e:
+        logger.critical(f'{os.path.splitext(os.path.basename(args.file))[0]} - {e.strerror}: {jacket_b}')
 
-    if os.path.exists(folder_name + 'jacket2.png'):
-        print("jacket2 found")
-        try:
-            shutil.copyfile(folder_name + 'jacket2.png',
-                            jacket_b_dir + '\\' + 'jk_01_{num:04d}_2_b.png'.format(num=args.id))
-        except IOError as e:
-            print('%s' % e.strerror + ': ' + 'jacket2.png')
-        else:
-            print("Copy OK")
 
-    if os.path.exists(folder_name + 'jacket2small.png'):
-        print("jacket2small found")
-        try:
-            shutil.copyfile(folder_name + 'jacket2small.png',
-                            jacket_s_dir + '\\' + 'jk_01_{num:04d}_2_s.png'.format(num=args.id))
-        except IOError as e:
-            print('%s' % e.strerror + ': ' + 'jacket2small.png')
-        else:
-            print("Copy OK")
+    try:
+        j = [f for f in os.listdir(folder_name) if re.search('jacketsmall.png', f, re.IGNORECASE)]
+        if j:
+            jacket_s = j[0]
+            print('Copying SMALL jacket...')
+            shutil.copyfile(folder_name + jacket_s, jacket_s_dir + '/' + 'jk_01_{num:04d}_1_s.png'.format(num=args.id))
+    except IOError as e:
+        logger.critical(f'{os.path.splitext(os.path.basename(args.file))[0]} - {e.strerror}: {jacket_s}')
 
-    if os.path.exists(folder_name + 'jacket3.png'):
-        print("jacket3 found")
-        try:
-            shutil.copyfile(folder_name + 'jacket3.png',
-                            jacket_b_dir + '\\' + 'jk_01_{num:04d}_3_b.png'.format(num=args.id))
-        except IOError as e:
-            print('%s' % e.strerror + ': ' + 'jacket3.png')
-        else:
-            print("Copy OK")
 
-    if os.path.exists(folder_name + 'jacket3Small.png'):
-        print("jacket3small found")
-        try:
-            shutil.copyfile(folder_name + 'jacket3small.png',
-                            jacket_s_dir + '\\' + 'jk_01_{num:04d}_3_s.png'.format(num=args.id))
-        except IOError as e:
-            print('%s' % e.strerror + ': ' + 'jacket3small.png')
-        else:
-            print("Copy OK")
+    try:
+        j = [f for f in os.listdir(folder_name) if re.search('jacket2.png', f, re.IGNORECASE)]
+        if j:
+            jacket2 = j[0]
+            print(f'{jacket2} found')
+            shutil.copyfile(folder_name + jacket2, jacket_b_dir + '/' + 'jk_01_{num:04d}_2_b.png'.format(num=args.id))
+    except IOError as e:
+        print('%s' % e.strerror + ': ' + 'jacket2')
+
+    try:
+        j = [f for f in os.listdir(folder_name) if re.search('jacket2small.png', f, re.IGNORECASE)]
+        if j:
+            jacket2_s = j[0]
+            print(f'{jacket2_s} found')
+            shutil.copyfile(folder_name + jacket2_s, jacket_s_dir + '/' + 'jk_01_{num:04d}_2_s.png'.format(num=args.id))
+    except IOError as e:
+        print('%s' % e.strerror + ': ' + 'jacket2_s')
+
+    try:
+        j = [f for f in os.listdir(folder_name) if re.search('jacket3.png', f, re.IGNORECASE)]
+        if j:
+            jacket3 = j[0]
+            print(f'{jacket3} found')
+            shutil.copyfile(folder_name + jacket3, jacket_b_dir + '/' + 'jk_01_{num:04d}_3_b.png'.format(num=args.id))
+    except IOError as e:
+        print('%s' % e.strerror + ': ' + 'jacket3')
+
+    try:
+        j = [f for f in os.listdir(folder_name) if re.search('jacket3small.png', f, re.IGNORECASE)]
+        if j:
+            jacket3_s = j[0]
+            print(f'{jacket3_s} found')
+            shutil.copyfile(folder_name + jacket3_s, jacket_s_dir + '/' + 'jk_01_{num:04d}_3_s.png'.format(num=args.id))
+            print('Copy OK')
+    except IOError as e:
+        print('%s' % e.strerror + ': ' + 'jacket3_s')
+
 
     # Now, if we have an audio file, convert that too
 
@@ -339,7 +371,7 @@ def main():
 def cache():
     def buildcache():
         newcache = {}
-        allfiles = [f for f in glob.glob("src\\custom_charts\\*\\*.*", recursive=True)]
+        allfiles = [f for f in glob.glob(os.path.join('src', 'custom_charts', '*', '*.*'), recursive=True)]
 
         for file in allfiles:
             if os.path.splitext(file)[1] not in ['.ssc', '.png', '.ogg', '.wav', '.mp3']:
@@ -409,7 +441,7 @@ def build_all():
         except FileNotFoundError:
             pass
     args.verify = True
-    files = [f for f in glob.glob("src\\custom_charts/*/*.ssc", recursive=True)]
+    files = [f for f in glob.glob(os.path.join('src', 'custom_charts', '*', '*.ssc'), recursive=True)]
     print('Caching...')
     caches = cache()
     if caches:
@@ -446,6 +478,7 @@ def build_all():
                 del caches[1][item]
             with open('src/cache.json', 'w') as outfile:
                 json.dump(caches[1], outfile, indent=2)
+            hash.generate_hash('custom_charts')
 
     if caches:
         if not len(added) > 0 and not len(modified) > 0:
@@ -496,27 +529,33 @@ def build_all():
     if 1 in err:
         prRed(' Verification failed.')
         error_summary()
+        sys.exit(1)
     else:
         prGreen(' Verification success.\n')
         args.verify = False
-        if not args.quiet:
+        if not args.yes:
             if prompt('Continue bulld process?'):
                 if not 1 in build():
-
-                    print('\n Caching...')
+                    print('\n Caching... Please wait')
                     cache()
+                    hash.generate_hash('custom_charts')
                     prGreen(' Build success.')
                     # manager.stop()
                     # sys.stdout.flush()
+                    sys.exit(0)
                 else:
                     error_summary()
+                    sys.exit(1)
         else:
             if not 1 in build():
-                print('\n Caching...')
+                print('\n Caching... Please wait')
                 cache()
+                hash.generate_hash('custom_charts')
                 prGreen(' Build success.')
+                sys.exit(0)
             else:
                 error_summary()
+                sys.exit(1)
 
 def build_one():
     if not os.path.exists('custom_charts'): shutil.copytree('src/defaults/custom_charts', './custom_charts')
@@ -526,7 +565,7 @@ def build_one():
     else:
         prGreen(' Verification success.\n')
         args.verify = False
-        if not args.quiet:
+        if not args.yes:
             if prompt('Continue bulld process?'):
                 if not main():
                     prGreen('\n Build success.')

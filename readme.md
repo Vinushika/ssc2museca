@@ -1,14 +1,18 @@
 # MÚSECA Chart Converter
 
+September 2020 Updates:
+- Added two programs to fully automate the process of transferring your chart updates to your cab! No need to f*ck around with thumb drives or ftp anymore.
+- Fixed some more bugs in the converter scripts.
+- Converter can now recognize a manually entered ``RELEASEDATE`` tag in the ssc file. See the Chart Format section for details. 
+
 June 2020 Updates:
 - Local caching
-    - When you run the converter for the first time, it will build a src\cache.json file to keep track of any changes that occurr in src\custom_charts.
+    - When you run the converter for the first time, it will build a src\cache.json file to keep track of any changes that occur in src\custom_charts.
     - If a song folder is removed from src\custom_charts, the converter will remove the respective assets from your converted custom_charts folder.
     - A change to any file in a folder in src\custom_charts will cause that song and all of it's assets to be re-converted.
 - Introduced a progress bar
 - Moved most of the batch file contents over to ssc2museca.py
 - More verification checks (jacket sizes, music files, etc)
-
 
 April 2020 Updates:  
 - Overhauled the converter, added better logging, ssc2museca executable, ssc verification.
@@ -25,40 +29,54 @@ August 2019 Updates:
 
 This utility includes a chart converter that can convert a set of charts written in StepMania's .ssc file format and an audio file to a format recognized by MÚSECA. Additionally, it will generate metadata to copy-paste into the music database xml, or optionally update an xml file if provided. Usage is described below:
 
-    ssc2museca\ssc2museca.exe [-h (shows help message)] [-id ID] [-d DIRECTORY] [-x NEW_XML] [-v --verify] SSC_FILE
+    usage: ssc2museca.exe [-h] [-f FILE] [-id ID] [-d DIRECTORY] [-x NEW_XML] [-v] [--build-all] [-y]
 
-In the above command, a chart for Novice (Green), Advanced (Yellow), and Exhaust (Red) will be parsed out of ``chart.ssc`` and metadata and a directory suitable for copying into the ``data_mods`` folder of IFS Layered FS will be created. By default, the converter will output the converted metadata, chart and audio files to a `custom_charts` folder in the current directory. To specify the output directory, use ``-d some/directory``. To tell the converter to create a new, isolated xml file containing just the metadata for one song, use ``-x somedir/music-info-b.xml``  
-The IFS xml merging function currently can't handle some japanese characters, the original music-info-b.xml is provided as a base.
-IFS LayeredFS will redirect the game to use the xml in ``data_mods/custom_charts/museca/xml``, so long as it is named the same.
+    A utility to convert 16-lane StepMania charts (.ssc format) to Museca format.
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -f FILE, --file FILE  .ssc file to convert to Museca format.
+      -id ID                ID to assign this song.
+      -d DIRECTORY, --directory DIRECTORY
+                            Directory to place files in. Defaults to current
+                            directory.
+      -x NEW_XML, --new-xml NEW_XML
+                            Location of an isolated music-info-b.xml to create. If
+                            not specified, a new one will be created or updated
+                            automatically in the xml directory.
+      -v, --verify          Checks the ssc files for errors without converting or
+                            writing files.
+      --build-all           Builds the modpack.
+      -y, --yes             Supress prompts.
 
 ## Installation
-* Python no longer a dependency, only VisualC++2019 Redist, which may already be installed on your pc.
+This fork is designed to be used in conjunction with a fork of StepMania 5.2 that adds a new ``museca-single`` game mode This mode defines a 16-lane single player mode, rather than a 16-lane double play mode like the ones offered by ``bm`` and ``techno``. A noteskin is provided that helps better visualize the spin lanes on top of the normal lanes and should result in quicker and easier chart creation.  
+A compiled Windows release is available here:
+- **.exe installer**: https://github.com/camprevail/ssc2museca/releases/download/V1.1/StepMania-5.2-git-d2b5a9a1b1-win32_INSTALLER.exe
+* VisualC++2019 Redist, which may already be installed on your pc. You should also install the x64 version on your cab if you want to use the personal updater programs.
 * PLEASE read this readme very carefully, especially the bits about handling the XMLs and jackets.
- 
+
 ## Recommended Usage:
 
-* Copy the chart folder you wish to convert from the stepmania-museca editor to ``src\custom_charts``
+* Copy the chart folders you wish to convert from the stepmania-museca editor to ``src\custom_charts``
 * You should have an ssc file, an audio file, and two jackets in the folder. (see below on jacket requirements)
-* Run one of the provided batch files to start the conversion process. Once complete, you may copy ``custom_charts`` to the ``contents\data_mods`` folder in your game.
+* Run the ``build_all.bat`` batch file to start the conversion process. Once complete, you may copy ``custom_charts`` to the ``contents\data_mods`` folder in your game, OR...
+* Use the updater programs to transfer the charts to your cab: (64bit VC++2019 Redist must be installed on your cab):
+    - Start the ``updater_pc_server`` program, Take note of the IP address and Port it prints out. This can run in the background and doesn't 
+    need to be restarted when you run the ``build_all.bat`` script to update your charts.
 
-
-## About This Fork
-
-This fork is designed to be used in conjunction with a fork of StepMania 5.2 that adds a new ``museca-single`` game mode This mode defines a 16-lane single player mode, rather than a 16-lane double play mode like the ones offered by ``bm`` and ``techno``. A noteskin is provided that helps better visualize the spin lanes on top of the normal lanes and should result in quicker and easier chart creation.
-
-Windows binaries for this StepMania 5.2 fork are available as a .zip or .exe installer:
-- **.zip**: https://ortlin.de/i/msc/StepMania-5.2-git-edbed30b62-win32.zip
-- **.exe installer**: https://ortlin.de/i/msc/StepMania-5.2-git-edbed30b62-win32.exe
-
-## Dependencies
-
-The following external dependencies are required to run this conversion software:
-- ~~IFS LayeredFS - Instructions inlcuded in the download. https://mon.im/bemanipatcher/secret/ifs_layeredfs_latest.zip~~
-- IFS LayeredFS is now built directly into spicetools, and loads the data_mods folder automatically.
+    - Copy the ``updater_cab_client`` program to the ``contents`` folder on your cab. Edit your gamestart/spicestart.bat: on a newline
+    above ``launcher`` or ``spice``, add ``call updater_cab_client 192.168.xxx.xxx:8000``. Use the ip and port from the updater_pc_server.
+    
+    - Restart your cab and enjoy automatic updates from your personal server! Note that updates can only take effect by restarting the game. 
+    This is a limitation of Museca, not the updater program. 
+  
+* IFS LayeredFS is now built directly into spicetools, and loads the data_mods folder automatically.
 
 ## Jackets
 
-The converter now automates the process of copy-pasting jackets and placing them in the correct folders witht the correct names. The parser will look for ``jacket.png and jacketSmall.png`` at minimum. If they aren't found, an error will be logged to ``error_log.txt``.
+The converter automates the process of copy-pasting jackets and placing them in the correct folders witht the correct names. The parser will look for ``jacket.png and jacketSmall.png`` at minimum. 
+If they aren't found, an error will be thrown and the converter will not convert the charts.  
 Support for individual-difficulty jackets is also available. The converter will look for ``jacket2.png, jacket2small.png, jacket3.png, jacket3small.png``, but it will not show an error if they are not found.
 
 Jackets have the following image size requirements:
@@ -73,6 +91,7 @@ Note that the game supports time signatures other than 4/4 but the converter doe
 
 ## Header Tags
 
+* ``RELEASEDATE`` - You can optionally add this header to the ssc file manually, only recognized by the ssc2museca converter.
 * ``TITLE`` - The title of the song as it shows in-game. This can include all sorts of characters, including english, kana or kanji. Various accented latin characters may not render correctly due to particulars about how the game handles certain character sets, though.
 * ``SUBTITLE`` - The chart ID that will be read by the converter. Museca's final music database update ended at 226, so you should use 227 or higher.
 * ``TITLETRANSLIT`` - The title of the song as sounded out, written in half-width katakana (dakuten allowed). This is used for title sort. There are converters which take any english and give you the katakana, and converters that go from full-width to half-width katakana. Use them!

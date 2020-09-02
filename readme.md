@@ -3,7 +3,7 @@
 September 2020 Updates:
 - Added two programs to fully automate the process of transferring your chart updates to your cab! No need to f*ck around with thumb drives or ftp anymore.
 - Fixed some more bugs in the converter scripts.
-- Converter can now recognize a manually entered ``RELEASEDATE`` tag in the ssc file. See the Chart Format section for details. 
+- Converter can now recognize manually entered ``RELEASEDATE`` and ``MUSICVOLUME`` tags in the ssc file. See the Chart Format section for details. 
 
 June 2020 Updates:
 - Local caching
@@ -91,7 +91,8 @@ Note that the game supports time signatures other than 4/4 but the converter doe
 
 ## Header Tags
 
-* ``RELEASEDATE`` - You can optionally add this header to the ssc file manually, only recognized by the ssc2museca converter.
+* ``RELEASEDATE`` - You can optionally add this header to the ssc file manually, only recognized by the ssc2museca converter. Format is YYYMMDD.
+* ``MUSICVOLUME`` - You can optionally add this header to the ssc file manually, only recognized by the ssc2museca converter. Accepts 0-127.
 * ``TITLE`` - The title of the song as it shows in-game. This can include all sorts of characters, including english, kana or kanji. Various accented latin characters may not render correctly due to particulars about how the game handles certain character sets, though.
 * ``SUBTITLE`` - The chart ID that will be read by the converter. Museca's final music database update ended at 226, so you should use 227 or higher.
 * ``TITLETRANSLIT`` - The title of the song as sounded out, written in half-width katakana (dakuten allowed). This is used for title sort. There are converters which take any english and give you the katakana, and converters that go from full-width to half-width katakana. Use them!

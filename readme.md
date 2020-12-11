@@ -1,5 +1,8 @@
 # MÚSECA Chart Converter
 
+December 2020 Updates:
+- General improvements.
+
 September 2020 Updates:
 - Added two programs to fully automate the process of transferring your chart updates to your cab! No need to f*ck around with thumb drives or ftp anymore.
 - Fixed some more bugs in the converter scripts.

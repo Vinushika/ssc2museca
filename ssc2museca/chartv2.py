@@ -6,6 +6,38 @@ import sys
 from typing import Dict, Any, List, Tuple, Optional
 from xml.dom import minidom  # type: ignore
 
+
+# Monkey patch minidom.Element.writexml to make empty nodes <%s></%s> instead of <%s/>
+def writexml(self, writer, indent="", addindent="", newl=""):
+    # indent = current indentation
+    # addindent = indentation to add to higher levels
+    # newl = newline string
+    writer.write(indent + "<" + self.tagName)
+
+    attrs = self._get_attributes()
+    a_names = sorted(attrs.keys())
+
+    for a_name in a_names:
+        writer.write(" %s=\"" % a_name)
+        minidom._write_data(writer, attrs[a_name].value)
+        writer.write("\"")
+    if self.childNodes:
+        writer.write(">")
+        if (len(self.childNodes) == 1 and
+                self.childNodes[0].nodeType == minidom.Node.TEXT_NODE):
+            self.childNodes[0].writexml(writer, '', '', '')
+        else:
+            writer.write(newl)
+            for node in self.childNodes:
+                node.writexml(writer, indent + addindent, addindent, newl)
+            writer.write(indent)
+        writer.write("</%s>%s" % (self.tagName, newl))
+    else:
+        writer.write("></%s>%s" % (self.tagName, newl))
+
+
+minidom.Element.writexml = writexml
+
 class Constants:
     EVENT_KIND_NOTE = 0
     EVENT_KIND_HOLD = 1
@@ -116,12 +148,12 @@ class Chartv2:
         self.metadata = self.__get_metadata(data)
         self.notes = self.__get_notesections(data)
         self.events = {}  # type: Dict[str, List[Dict[str, int]]]
-        
+
         if not self.metadata.get('bpms', {}):
             self.metadata['bpms'] = self.notes.get('bpms', {})
         if not self.metadata.get('labels', {}):
             self.metadata['labels'] = self.notes.get('labels', {})
-        
+
         for difficulty in ['easy', 'medium', 'hard']:
             if difficulty not in self.notes:
                 continue
@@ -208,7 +240,7 @@ class Chartv2:
 
         # #BPMS
         bpms_section = False
-        
+
         # #LABELS
         labels_section = False
 
@@ -765,9 +797,11 @@ class Chartv2:
 
 class XMLv2:
 
-    def __init__(self, chart: Chartv2, chartid: int) -> None:
+    def __init__(self, chart: Chartv2, args: Any, distribution_date=None, volume=None) -> None:
         self.__chart = chart
-        self.__id = chartid
+        self.__id = args.id
+        self.distribution_date = distribution_date
+        self.volume = volume
 
     def get_notes(self, difficulty: str) -> bytes:
         # Grab the parsed event data for this difficulty.
@@ -885,6 +919,9 @@ class XMLv2:
             if value is not None:
                 text = music_data.createTextNode(value)
                 element.appendChild(text)
+            else:
+                text = music_data.createTextNode('')
+                element.appendChild(text)
 
             return element
 
@@ -894,6 +931,7 @@ class XMLv2:
 
         # Create info section for metadata
         info = element(music, 'info')
+        date = datetime.date.strftime(datetime.datetime.now(), "%Y%m%d")
 
         # Copypasta into info the various data we should have
         element(info, 'label', str(self.__id))
@@ -901,13 +939,22 @@ class XMLv2:
         element(info, 'title_yomigana', infodict.get('titletranslit', ''))
         element(info, 'artist_name', infodict.get('artist', ''))
         element(info, 'artist_yomigana', infodict.get('artisttranslit', ''))
-        element(info, 'ascii', infodict.get('subtitletranslit', 'dummy'))
+        # element(info, 'ascii', infodict.get('subtitletranslit', 'dummy'))
+        element(info, 'ascii', 'dummy')
         element(info, 'bpm_min', str(int(minbpm * 100))).setAttribute('__type', 'u32')
         element(info, 'bpm_max', str(int(maxbpm * 100))).setAttribute('__type', 'u32')
-        element(info, 'distribution_date', datetime.date.strftime(datetime.datetime.now(), "%Y%m%d")).setAttribute('__type', 'u32')  # type: ignore
 
-        # TODO: Figure out what more of these should be (is_fixed???)
-        element(info, 'volume', infodict.get('musicvolume', '90')).setAttribute('__type', 'u16')
+        # Try to get these two items from the manifest json
+        if self.distribution_date:
+            element(info, 'distribution_date', self.distribution_date).setAttribute('__type', 'u32')
+        else:
+            element(info, 'distribution_date', infodict.get('releasedate', date)).setAttribute('__type', 'u32')
+
+        if self.volume:
+            element(info, 'volume', self.volume).setAttribute('__type', 'u16')
+        else:
+            element(info, 'volume', infodict.get('musicvolume', '90')).setAttribute('__type', 'u16')
+
         element(info, 'bg_no', '0').setAttribute('__type', 'u16')
         element(info, 'genre', '16').setAttribute('__type', 'u8')
         element(info, 'is_fixed', '1').setAttribute('__type', 'u8')
@@ -916,7 +963,7 @@ class XMLv2:
         element(info, 'world', '0').setAttribute('__type', 'u8')
         element(info, 'tier', '1').setAttribute('__type', 's8')
         element(info, 'license', infodict.get('license', ''))
-        element(info, 'vmlink_phase', '0').setAttribute('__type', 's32')
+        element(info, 'vmlink_phase', '3').setAttribute('__type', 's32') # Agetta Moratta/Museca Plus
         element(info, 'inf_ver', '0').setAttribute('__type', 'u8')
 
         # Create difficulties section

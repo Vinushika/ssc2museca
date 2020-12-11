@@ -1,5 +1,4 @@
 import hashlib
-import glob
 import os
 import time
 import sys
@@ -36,8 +35,8 @@ def generate_hash(path):
     for file in filelist:
         cache[file] = (hash_file(file))
     b = round(time.perf_counter(), 3)
-    print('cache generated in {} seconds'.format(str(round(b-a, 3))))
-    with open('custom-charts-cache.json', 'w') as f:
+    print('Cache generated in {} seconds'.format(str(round(b-a, 3))))
+    with open(f'{path}-cache.json', 'w') as f:
         json.dump(cache, f, indent=2)
     return
 

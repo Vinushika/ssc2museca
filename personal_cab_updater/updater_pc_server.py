@@ -1,4 +1,4 @@
-import os, random, json, subprocess, re, time, glob
+import os, random, json, sys
 from flask import Flask, request, jsonify, abort, send_from_directory, make_response, Response
 from flask_executor import Executor
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -22,9 +22,15 @@ def echo(text, file=None, nl=None, err=None, color=None, **styles):
 click.echo = echo
 click.secho = secho
 
+if len(sys.argv) > 1:
+    folderName = sys.argv[1]
+else:
+    folderName = "custom_charts"
+
 ip_list = [ip[4][0] for ip in getaddrinfo(host=gethostname(), port=None, family=AF_INET)]
-print('custom_charts local/personal update server')
+print(f'local/personal update server for Museca customs')
 print(f"\nListening on {ip_list}, port 8000")
+print(f"\nServing folder {folderName}")
 
 
 def dict_compare(new, old):
@@ -47,15 +53,14 @@ def keygen():
 @app.route("/update", methods=['POST'])
 def main():
     print(f"Connection from {request.remote_addr}")
-    folder = 'custom_charts/'
+    folder = f'{folderName}/'
     if not os.path.exists(folder):
-        print('The custom_charts folder does not exist!')
+        print(f'The {folderName} folder does not exist!')
         return abort(400)
     if not os.path.exists(app.static_folder):
         os.mkdir(app.static_folder)
-    if not os.path.exists("custom-charts-cache.json"):
-        print("Cache file doesn't exist. Brb caching custom_charts...")
-        hash.generate_hash('custom_charts')
+    print('Updating cache file...')
+    hash.generate_hash(folderName)
     data = request.get_data()
     if not data:    # if client didn't send a cache file
         print('client did not send data')
@@ -63,21 +68,21 @@ def main():
 
     try:    # some basic prechecks
         clientcache = json.loads(data)
-        # assert 'custom_charts' in os.path.dirname(list(clientcache.keys())[0])
     except Exception as e:
         print(e)
         return abort(400)
 
     # Now we compare the client's cache with the servers cache, immediately return 'no updates' if there are none,
     # or submit it to a background process and return the unique process id.
-    with open('custom-charts-cache.json', 'r') as f:
+    with open(f'{folderName}-cache.json', 'r') as f:
         servercache = json.load(f)
     added, removed, modified, same = dict_compare(servercache, clientcache)
     updates = {'updates': list(added.union(modified)), 'removed': list(removed)}
     if not (updates['updates'] or updates['removed']):
+        print('No Updates.\n')
         return jsonify({'status': 'no updates'})
     _id = keygen()
-    executor.submit_stored(_id, generate_diff, updates, _id, folder)
+    executor.submit_stored(_id, generate_diff, updates, _id)
     return jsonify({'status': 'accepted', 'id': _id}), 202
 
 
@@ -90,6 +95,7 @@ def get_result():
         return jsonify({'status': executor.futures._state(_id)})
     future = executor.futures.pop(_id)
     if not future.exception():
+        print(f'{request.remote_addr} is downloading {future.result()[0]}.')
         return jsonify({'status': 'done', 'result': future.result()})
     else:
         print(future.exception())
@@ -102,24 +108,28 @@ def delete_diff():
     _id = request.args['id']
     if f"{_id}.zip" in os.listdir(app.static_folder):
         os.remove(f"{app.static_folder}/{_id}.zip")
+        print(f'diffs/{_id}.zip deleted.')
+        print('Update cycle complete.\n')
     return '', 200
 
 
 # Write the updated files to a zip file.
 # We also return the updates dict, so the client knows which files to remove.
-def generate_diff(updates, _id, folder):
-    print('generating diff')
+def generate_diff(updates, _id):
+    print('Generating diff')
     os.makedirs('diffs', exist_ok=True)
     with ZipFile(f"diffs/{_id}.zip", mode='w', compression=ZIP_DEFLATED, compresslevel=6) as f:
         for item in updates['updates']:
             f.write(f'{item}', arcname=item)
-        f.write(f'custom-charts-cache.json', arcname='custom-charts-cache.json')
+        f.write(f'{folderName}-cache.json', arcname=f'{folderName}-cache.json')
+    print(f'Diff generated in diffs/{_id}.zip')
     return f"{_id}.zip", updates
 
 
 # This method allows us to use the hit counter for static downloads served by nginx at /download, which is mapped to the builds dir.
 @app.route("/downloads/<file>", methods=['GET'])
 def download(file):
+    print(f'{request.remote_addr} is downloading {file}.')
     return send_from_directory(app.config('static_folder'), file, as_attachment=True)
 
 

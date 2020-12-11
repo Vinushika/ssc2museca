@@ -75,6 +75,18 @@ def parse_args():
         help="Supress prompts.",
         action='store_true'
     )
+    parser.add_argument(
+        "--manifest",
+        help="Builds the modpack based on a specified json file.",
+        type=str,
+        default=None
+    )
+    parser.add_argument(
+        "--output-name",
+        help="Custom output folder name. Default is custom_charts",
+        type=str,
+        default='custom_charts'
+    )
     if len(sys.argv) < 2:
         parser.print_usage()
         sys.exit(1)
@@ -82,7 +94,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
+def main(manifest=None):
     folder_name = os.path.dirname(args.file) + os.sep
     root = args.directory
     if root[-1] != '/':
@@ -105,7 +117,10 @@ def main():
                     int(subtitle)
                 except:
                     raise Exception("No ID found in SSC file, or ID is incorrect. Please specify an id in the #SUBTITLE:x; field.")
-            XMLv2(chart, args.id)
+            if manifest and subtitle not in manifest.keys():
+                prRed(f'Skipping {args.file}')
+                return 0
+            XMLv2(chart, args)
 
             if not os.path.exists(folder_name + chart.metadata.get('music')):
                 logger.critical(folder_name + f' - Cannot find music file: {chart.metadata.get("music")}')
@@ -174,6 +189,9 @@ def main():
         return exception_handler(msg, args.file)
 
     subtitle = chart.metadata.get('subtitle')
+    if manifest and subtitle not in manifest.keys():
+        prRed(f'Skipping {args.file}')
+        return 0
     if args.id is None:
         try:
             int(subtitle)
@@ -186,15 +204,17 @@ def main():
     else:
         args.id = int(args.id)
     try:
-        xml = XMLv2(chart, args.id)
+        if manifest:
+            xml = XMLv2(chart, args, distribution_date=manifest.get(str(args.id)).get('distribution_date'), volume=manifest.get(str(args.id)).get('volume'))
+        else:
+            xml = XMLv2(chart, args)
     except Exception as msg:
         return exception_handler(msg, args.file)
 
-    output_dir = 'custom_charts'
-    jacket_b_dir = os.path.join(root, output_dir, 'graphics', 'jacket_b')
-    jacket_s_dir = os.path.join(root, output_dir, 'graphics', 'afp', 'museca1_5', 'pix_jk_s_2_ifs')
-    music_dir = os.path.join(root, output_dir, 'museca', 'sound', 'music', '01_{num:04d}'.format(num=args.id))
-    xml_dir = os.path.join(root, output_dir, 'museca', 'xml')
+    jacket_b_dir = os.path.join(root, args.output_name, 'graphics', 'jacket_b')
+    jacket_s_dir = os.path.join(root, args.output_name, 'graphics', 'afp', 'museca1_5', 'pix_jk_s_2_ifs')
+    music_dir = os.path.join(root, args.output_name, 'museca', 'sound', 'music', '01_{num:04d}'.format(num=args.id))
+    xml_dir = os.path.join(root, args.output_name, 'museca', 'xml')
     os.makedirs(root, exist_ok=True)
     os.makedirs(music_dir, exist_ok=True)
     os.makedirs(xml_dir, exist_ok=True)
@@ -434,13 +454,18 @@ def prompt(question):
             return False
 
 def build_all():
-    if not os.path.exists('custom_charts'):
-        shutil.copytree('src/defaults/custom_charts', './custom_charts')
+    if not os.path.exists(args.output_name):
+        shutil.copytree('src/defaults/custom_charts', f'./{args.output_name}')
         try:
             os.remove('src/cache.json')
         except FileNotFoundError:
             pass
     args.verify = True
+    if args.manifest:
+        with open(args.manifest, encoding='utf-8') as f:
+            manifest = json.load(f)
+    else:
+        manifest = None
     files = [f for f in glob.glob(os.path.join('src', 'custom_charts', '*', '*.ssc'), recursive=True)]
     print('Caching...')
     caches = cache()
@@ -455,30 +480,30 @@ def build_all():
                 print(f"Removing {os.path.basename(item)} and all associated entries from the built modpack.")
                 _id = caches[1][item]['id']
                 remove_metadata = getattr(XMLv2, 'update_metadata')
-                fp = open('custom_charts/museca/xml/music-info-b.xml', "rb")
+                fp = open(f'{args.output_name}/museca/xml/music-info-b.xml', "rb")
                 data = fp.read()
                 fp.close()
-                fp = open('custom_charts/museca/xml/music-info-b.xml', "wb")
+                fp = open(f'{args.output_name}/museca/xml/music-info-b.xml', "wb")
                 fp.write(remove_metadata(None, old_data=data, _id=_id))
                 fp.close()
-                try: shutil.rmtree(f"custom_charts/museca/sound/music/01_{_id:04d}")
+                try: shutil.rmtree(f"{args.output_name}/museca/sound/music/01_{_id:04d}")
                 except: pass
                 bigJackets = [f'jk_01_{_id:04d}_1_b.png', f'jk_01_{_id:04d}_2_b.png', f'jk_01_{_id:04d}_3_b.png']
                 smallJackets = [f'jk_01_{_id:04d}_1_s.png', f'jk_01_{_id:04d}_2_s.png', f'jk_01_{_id:04d}_3_s.png']
                 for jacket in bigJackets:
                     try:
-                        os.remove(f'./custom_charts/graphics/jacket_b/{jacket}')
+                        os.remove(f'./{args.output_name}/graphics/jacket_b/{jacket}')
                     except FileNotFoundError:
                         continue
                 for jacket in smallJackets:
                     try:
-                        os.remove(f'./custom_charts/graphics/afp/museca1_5/pix_jk_s_2_ifs/{jacket}')
+                        os.remove(f'./{args.output_name}/graphics/afp/museca1_5/pix_jk_s_2_ifs/{jacket}')
                     except FileNotFoundError:
                         continue
                 del caches[1][item]
             with open('src/cache.json', 'w') as outfile:
                 json.dump(caches[1], outfile, indent=2)
-            hash.generate_hash('custom_charts')
+            hash.generate_hash(f'{args.output_name}')
 
     if caches:
         if not len(added) > 0 and not len(modified) > 0:
@@ -495,12 +520,12 @@ def build_all():
             if os.path.dirname(f) in added or os.path.dirname(f) in modified:
                 args.file = f
                 args.id = None
-                err.append(main())
+                err.append(main(manifest))
                 verify_pbar.update()
         else:
             args.file = f
             args.id = None
-            err.append(main())
+            err.append(main(manifest))
             verify_pbar.update()
     verify_pbar.close()
 
@@ -517,12 +542,12 @@ def build_all():
                 if os.path.dirname(f) in added or os.path.dirname(f) in modified:
                     args.file = f
                     args.id = None
-                    err.append(main())
+                    err.append(main(manifest))
                     build_pbar.update()
             else:
                 args.file = f
                 args.id = None
-                err.append(main())
+                err.append(main(manifest))
                 build_pbar.update()
         build_pbar.close()
         return errs
@@ -538,7 +563,7 @@ def build_all():
                 if not 1 in build():
                     print('\n Caching... Please wait')
                     cache()
-                    hash.generate_hash('custom_charts')
+                    hash.generate_hash(f'{args.output_name}')
                     prGreen(' Build success.')
                     # manager.stop()
                     # sys.stdout.flush()
@@ -550,7 +575,7 @@ def build_all():
             if not 1 in build():
                 print('\n Caching... Please wait')
                 cache()
-                hash.generate_hash('custom_charts')
+                hash.generate_hash(f'{args.output_name}')
                 prGreen(' Build success.')
                 sys.exit(0)
             else:
@@ -558,7 +583,7 @@ def build_all():
                 sys.exit(1)
 
 def build_one():
-    if not os.path.exists('custom_charts'): shutil.copytree('src/defaults/custom_charts', './custom_charts')
+    if not os.path.exists(f'{args.output_name}'): shutil.copytree('src/defaults/custom_charts', f'./{args.output_name}')
     args.verify = True
     if main():
         prRed(' Verification failed.')

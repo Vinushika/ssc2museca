@@ -7,11 +7,18 @@ from requests.exceptions import RequestException
 from pathlib import Path
 
 if len(sys.argv) < 2:
-    print('Please specify the server IP. ex. call updater_cab_client 192.168.1.10:8000')
+    print('Please specify the server IP. Foldername is optional, default is custom_charts.\nUsage: call updater_cab_client ip:port foldername')
     time.sleep(3)
     sys.exit()
 else:
     ip = sys.argv[1]
+
+if len(sys.argv) > 2:
+    folderName = sys.argv[2]
+else:
+    folderName = "custom_charts"
+
+
 update_url = f'http://{ip}/update'
 result_url = f'http://{ip}/update/result'
 delete_url = f'http://{ip}/update/delete'
@@ -28,11 +35,16 @@ def main():
 
     print('Museca Customs - Personal Updater\n\n')
 
-    if os.path.exists('data_mods/custom-charts-cache.json'):
+    if os.path.exists(f'data_mods/{folderName}-cache.json'):
         try:
-            with open('data_mods/custom-charts-cache.json', 'rb') as f:
+            with open(f'data_mods/{folderName}-cache.json', 'rb') as f:
                 response = requests.post(update_url, data=f).json()
-
+        except JSONDecodeError as e:
+            print(f"Exception")
+            print("Unexpected response from the server. The cache file may be corrupt. Please delete it and try again.")
+            print(response.status_code, response.reason, response.url)
+            time.sleep(3)
+            sys.exit(1)
         except RequestException as e:
             print(f"Exception: {e}")
             time.sleep(3)
@@ -46,6 +58,7 @@ def main():
     print(response)
     os.makedirs('data_mods', exist_ok=True)
     os.chdir('data_mods')
+
 
     if response['status'] == 'no updates':
         print('No updates.')
@@ -75,14 +88,13 @@ def main():
                 wget.download(f'{diffs_url}{zipfile}')
                 print()
                 requests.delete(delete_url, params={'id': _id})
-
                 for item in status['result'][1]['removed']:
                     try:
                         print(f"Removing {item}")
                         os.remove(item)
                     except OSError as e:
                         print(e)
-                folderPath = Path('custom_charts')
+                folderPath = Path(folderName)
                 folderlist = [x for x in folderPath.rglob("*") if x.is_dir()]
                 for item in folderlist:
                     if not os.listdir(item):

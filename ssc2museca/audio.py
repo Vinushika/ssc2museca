@@ -15,7 +15,6 @@ if not sox_location:
 ffmpeg_location = [f for f in glob.glob("**/ffmpeg.exe", recursive=True)]
 if os.name == "posix":
     ffmpeg_location = [str(subprocess.run(["which","ffmpeg"],capture_output=True,text=True).stdout.strip())]
-print(f"ffmpeg: {ffmpeg_location}")
 if not ffmpeg_location:
     exception_handler('Could not locate ffmpeg')
 

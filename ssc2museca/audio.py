@@ -7,12 +7,17 @@ from typing import Dict, List, Tuple, Optional
 
 
 sox_location = [f for f in glob.glob("**/sox.exe", recursive=True)]
+if os.name == "posix":
+    sox_location = [str(subprocess.run(["which","sox"],capture_output=True,text=True).stdout.strip())]
 if not sox_location:
-    exception_handler('Could not locate SOX.exe')
+    exception_handler('Could not locate SOX.')
 
 ffmpeg_location = [f for f in glob.glob("**/ffmpeg.exe", recursive=True)]
+if os.name == "posix":
+    ffmpeg_location = [str(subprocess.run(["which","ffmpeg"],capture_output=True,text=True).stdout.strip())]
+print(f"ffmpeg: {ffmpeg_location}")
 if not ffmpeg_location:
-    exception_handler('Could not locate ffmpeg.exe')
+    exception_handler('Could not locate ffmpeg')
 
 class TwoDX:
     def __init__(self, data: Optional[bytes] = None) -> None:
